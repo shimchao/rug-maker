@@ -68,7 +68,7 @@ npm run pack:win   # 윈도우 앱으로 패키징 (맥에서도 만들 수 있�
 ## 크레딧
 - 제작: 심팀장님 ([@shimteamjjang_ai](https://www.instagram.com/shimteamjjang_ai/))
 - 출처: Terkel([@terkelg](https://x.com/terkelg))의 바탕화면 러그 데모를 참고해서 만들었어요.
-- 구조 참고: 커뮤니티에 공유된 바탕화면 러그 앱(제작 @kieeeong)을 살펴보고 구조를 참고했어요. 코드와 이미지는 가져오지 않았고, 이 저장소의 코드는 새로 작성했어요. 기본 러그의 고양이 사진은 구글 이미지 검색의 「사용 가능한 라이선스」 필터로 받은 것이에요(원 출처와 세부 라이선스는 확인 중이에요).
+- 이 저장소의 코드는 새로 작성했어요. 기본 러그의 고양이 사진은 구글 이미지 검색의 「사용 가능한 라이선스」 필터로 받은 것이에요(원 출처와 세부 라이선스는 확인 중이에요).
 - 사용한 오픈소스: [Electron](https://www.electronjs.org/), [three.js](https://threejs.org/), [koffi](https://koffi.dev/) (모두 MIT 라이선스)
 
 ## 라이선스
