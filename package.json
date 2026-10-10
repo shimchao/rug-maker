@@ -1,0 +1,20 @@
+{
+  "name": "rug-maker",
+  "productName": "Rug Maker",
+  "version": "0.1.0",
+  "description": "내 이미지로 만드는 바탕화면 러그",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "pack:mac": "electron-packager . \"Rug Maker\" --platform=darwin --arch=arm64 --out=dist --overwrite --app-bundle-id=local.rugmaker.desktop --extend-info=extend-info.plist --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\"",
+    "pack:win": "electron-packager . \"Rug Maker\" --platform=win32 --arch=x64 --out=dist --overwrite --ignore=\"^/dist\" --ignore=\"^/node_modules/\\.cache\" --ignore=\"^/node_modules/koffi/build/koffi/(?!win32_x64)\""
+  },
+  "dependencies": {
+    "koffi": "^2.15.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.3.6",
+    "electron": "^39.0.0"
+  }
+}

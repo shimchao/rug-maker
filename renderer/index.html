@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>나만의 러그 만들기</title>
+<style>
+:root{--ink:#493630;--sub:#9b7d72;--card:rgba(255,250,243,.96);--line:#eadfd6;--accent:#c9836b;--accent-ink:#fff}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#e9dfd2;color:var(--ink);font-family:'Apple SD Gothic Neo','Malgun Gothic','Segoe UI',sans-serif;user-select:none;-webkit-user-select:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#panel{position:fixed;left:16px;top:16px;width:312px;max-height:calc(100% - 32px);overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 18px 14px;box-shadow:0 10px 40px #3425201f}
+#panel.min{width:auto;padding:10px 14px}
+#panel.min .body{display:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:17px;letter-spacing:-.5px;margin:0}
+.eyebrow{display:block;font-size:9px;font-weight:700;letter-spacing:2px;color:#b58373;margin-bottom:4px}
+.lede{font-size:12px;line-height:1.7;color:var(--sub);margin:8px 0 14px}
+.fold{border:0;background:none;color:var(--sub);font-size:12px;cursor:pointer;padding:4px 6px}
+button{font:inherit;color:inherit}
+.primary{width:100%;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;padding:12px;cursor:pointer}
+.primary:active{transform:translateY(1px)}
+.linkish{display:block;margin:8px auto 0;border:0;background:none;color:var(--sub);font-size:11px;text-decoration:underline;cursor:pointer}
+.sec{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.sec h2{font-size:11px;letter-spacing:1px;color:var(--sub);margin:0 0 8px;font-weight:700}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;cursor:pointer}
+.pill[aria-pressed=true]{background:#57413a;border-color:#57413a;color:#fff}
+.row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:11px;color:var(--sub)}
+.row input[type=range]{flex:1;accent-color:var(--accent)}
+.swatches{display:flex;gap:8px}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.sw[aria-pressed=true]{box-shadow:0 0 0 2px #57413a}
+.duo{display:flex;gap:8px;margin-top:16px}
+.duo button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px;font-size:13px;cursor:pointer}
+.tip{font-size:10.5px;line-height:1.8;color:var(--sub);margin-top:14px}
+.tip b{color:#57413a}
+#toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);max-width:88vw;overflow:hidden;border-radius:6px;padding:11px 20px;background:#2a2420;color:#fff;font-size:13px;font-weight:600;letter-spacing:-.2px;box-shadow:0 6px 24px #0005;pointer-events:none;opacity:0;transition:opacity .2s}
+#toast::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:#f0b46c}
+#toast.on{opacity:1}
+#toast.on::after{animation:toastfill var(--dur,1500ms) ease-out forwards}
+@keyframes toastfill{from{width:0}to{width:100%}}
+#drop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#fffaf3d9;font-size:22px;font-weight:700;color:#57413a;border:4px dashed var(--accent);margin:10px;border-radius:24px;pointer-events:none}
+#drop.on{display:flex}
+@media (max-width:640px){
+  #panel{left:10px;right:10px;top:auto;bottom:10px;width:auto;max-height:48%}
+  #toast{bottom:auto;top:16px}
+}
+html.desktop,html.desktop body{background:transparent!important}
+html.desktop #panel,html.desktop #drop{display:none!important}
+</style>
+</head>
+<body>
+<canvas id="stage" aria-label="러그: 왼쪽 드래그로 구기기, 오른쪽 드래그로 이동, 더블클릭으로 펼치기"></canvas>
+
+<aside id="panel">
+  <div class="top">
+    <div><span class="eyebrow">RUG MAKER</span><h1>나만의 러그 만들기</h1></div>
+    <button class="fold" id="fold" type="button">접기</button>
+  </div>
+  <div class="body">
+    <p class="lede">좋아하는 이미지를 올리면, 구기고 펼 수 있는 러그가 돼요. 이미지는 내 브라우저 안에서만 처리하고 어디로도 보내지 않아요.</p>
+    <button class="primary" id="pick" type="button">이미지 올리기</button>
+    <input id="file" type="file" accept="image/*" hidden>
+    <button class="linkish" id="sample" type="button">예시 곰돌이로 돌아가기</button>
+
+    <div class="sec">
+      <h2>러그 모양</h2>
+      <div class="pills" id="shapes">
+        <button class="pill" data-mode="cutout" type="button">배경 지우기</button>
+        <button class="pill" data-mode="circle" type="button">동그랗게</button>
+        <button class="pill" data-mode="round" type="button">둥근 네모</button>
+        <button class="pill" data-mode="asis" type="button">그대로</button>
+      </div>
+      <div class="row" id="tolRow"><span>지우기 강도</span><input id="tol" type="range" min="12" max="110" value="40"></div>
+    </div>
+
+    <div class="sec">
+      <h2>러그 효과</h2>
+      <div class="pills" id="fx">
+        <button class="pill" data-fx="none" aria-pressed="true" type="button">없음</button>
+        <button class="pill" data-fx="faint" aria-pressed="false" type="button">아주 약하게</button>
+        <button class="pill" data-fx="soft" aria-pressed="false" type="button">약하게</button>
+        <button class="pill" data-fx="normal" aria-pressed="false" type="button">보통</button>
+        <button class="pill" data-fx="strong" aria-pressed="false" type="button">강하게</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>바닥</h2>
+      <div class="swatches" id="floors">
+        <button class="sw" data-c="#e9dfd2" style="background:#e9dfd2" aria-label="크림" type="button"></button>
+        <button class="sw" data-c="#c9b79f" style="background:#c9b79f" aria-label="원목" type="button"></button>
+        <button class="sw" data-c="#9fb3a4" style="background:#9fb3a4" aria-label="세이지" type="button"></button>
+        <button class="sw" data-c="#d8c3c8" style="background:#d8c3c8" aria-label="로즈" type="button"></button>
+        <button class="sw" data-c="#3d3b40" style="background:#3d3b40" aria-label="차콜" type="button"></button>
+      </div>
+    </div>
+
+    <div class="duo">
+      <button id="flat" type="button">펼치기</button>
+      <button id="save" type="button">사진 저장</button>
+    </div>
+    <div class="tip"><b>왼쪽 드래그</b> 구기기 · <b>오른쪽 드래그</b>(Shift) 옮기기<br><b>휠</b> 크기 · <b>더블클릭</b> 펼치기<br>사진을 이 화면에 끌어다 놓거나 붙여넣어도 돼요.</div>
+  </div>
+</aside>
+
+<div id="toast" role="status"></div>
+<div id="drop">여기에 이미지를 놓으세요</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="rug.js"></script>
+</body>
+</html>
