@@ -173,6 +173,10 @@ async function create() {
   win = new BrowserWindow({...area, title: 'Rug Maker', transparent: true, frame: false, resizable: false, hasShadow: false,
     skipTaskbar: true, show: false, focusable: false, fullscreenable: false, maximizable: false, minimizable: false, backgroundColor: '#00000000',
     webPreferences: {preload: path.join(__dirname, 'renderer', 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false}});
+  win.webContents.on('render-process-gone', (_e, d) => { log('renderer gone ' + JSON.stringify(d)); if (!quitting && d.reason !== 'clean-exit') setTimeout(() => { try { win.reload(); } catch {} }, 500); });
+  win.on('unresponsive', () => log('window unresponsive'));
+  app.on('child-process-gone', (_e, d) => log('child gone ' + JSON.stringify(d)));
+  try { log('gpu ' + JSON.stringify(app.getGPUFeatureStatus())); } catch {}
   win.setMenu(null); win.setIgnoreMouseEvents(true, {forward: true});
   win.webContents.setWindowOpenHandler(() => ({action: 'deny'}));
   win.webContents.on('will-navigate', e => e.preventDefault());
@@ -186,6 +190,7 @@ async function create() {
   ipcMain.handle('rug:init', e => { if (!valid(e)) return null; const out = {settings, imageDataUrl: imageDataUrl()}; if (!settings.seen) save({seen: true}); return out; });
   ipcMain.on('rug:hit', (e, v) => { if (valid(e) && !dragging) { setIgnored(!v); log('hit ' + v); } });
   ipcMain.on('rug:dragging', (e, v) => { if (valid(e)) { dragging = v; if (v) setIgnored(false); log('dragging ' + v); } });
+  ipcMain.on('rug:log', (e, m) => { if (valid(e)) log('renderer ' + String(m).slice(0, 200)); });
   ipcMain.on('rug:menu', e => { if (valid(e)) buildMenu().popup({window: win}); });
   ipcMain.on('rug:report', (e, d) => { if (valid(e) && d && d.mode && d.mode !== settings.mode) { save({mode: d.mode}); hasAlpha = !!d.hasAlpha; refresh(); } });
   // 바탕화면 층의 창은 「마우스가 러그 위에 있다」는 신호를 못 받는다 → 커서 위치를 직접 읽어 화면에 알려 준다
@@ -197,7 +202,7 @@ async function create() {
     lastKey = key; lastSent = now;
     const b = win.getBounds();
     win.webContents.send('rug:cursor', {x: p.x - b.x, y: p.y - b.y});
-  }, 20);
+  }, process.platform === 'win32' ? 33 : 20);
   globalShortcut.register('CommandOrControl+Alt+Shift+R', toggle);
   screen.on('display-metrics-changed', () => { win.setBounds(selectedDisplay().workArea); refresh(); });
   screen.on('display-added', () => refresh());

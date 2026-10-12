@@ -1,7 +1,7 @@
 {
   "name": "rug-maker",
   "productName": "Rug Maker",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "내 이미지로 만드는 바탕화면 러그",
   "private": true,
   "main": "main.cjs",

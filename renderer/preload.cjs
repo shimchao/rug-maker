@@ -3,6 +3,7 @@ contextBridge.exposeInMainWorld('rugHost', {
   init: () => ipcRenderer.invoke('rug:init'),
   hit: v => ipcRenderer.send('rug:hit', Boolean(v)),
   dragging: v => ipcRenderer.send('rug:dragging', Boolean(v)),
+  log: m => ipcRenderer.send('rug:log', String(m)),
   menu: () => ipcRenderer.send('rug:menu'),
   report: data => ipcRenderer.send('rug:report', data),
   onCursor: cb => { ipcRenderer.on('rug:cursor', (_, p) => cb(p)); },

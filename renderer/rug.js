@@ -8,7 +8,8 @@ const $$ = s => [...document.querySelectorAll(s)];
 /* ───────── 장면 ───────── */
 const stage = $('#stage');
 let W = innerWidth, H = innerHeight;
-const renderer = new THREE.WebGLRenderer({canvas: stage, antialias: true, alpha: DESKTOP, preserveDrawingBuffer: true});
+const renderer = new THREE.WebGLRenderer({canvas: stage, antialias: true, alpha: DESKTOP, preserveDrawingBuffer: !DESKTOP, powerPreference: DESKTOP ? 'low-power' : 'default'});
+let pixelCap = 1.75;   // 레퍼런스 앱과 같은 상한. 느리면 아래 감시 장치가 1로 낮춘다
 if (DESKTOP) renderer.setClearColor(0x000000, 0);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -18,7 +19,7 @@ cam.position.set(0, 0, 2000);
 scene.add(new THREE.AmbientLight(0xffffff, 1.7));
 const sun = new THREE.DirectionalLight(0xffffff, 2.55);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(DESKTOP ? 1024 : 2048, DESKTOP ? 1024 : 2048);
 sun.shadow.camera.near = 100; sun.shadow.camera.far = 3500;
 sun.shadow.normalBias = .25; sun.shadow.bias = -15e-6;
 scene.add(sun, sun.target);
@@ -30,7 +31,7 @@ scene.add(floor);
 
 function layout() {
   W = innerWidth; H = innerHeight;
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, pixelCap));
   renderer.setSize(W, H, false);
   cam.right = W; cam.bottom = -H; cam.updateProjectionMatrix();
   floor.position.set(W / 2, -H / 2, 0);
@@ -707,8 +708,26 @@ function frame(ts) {
     acc -= 1 / 60; steps++;
     if (cloth && step(cloth)) ran = true;
   }
-  if (ran || dirty) { updateGeometry(); renderer.render(scene, cam); dirty = false; }
+  if (ran || dirty) {
+    const t0 = performance.now();
+    updateGeometry(); renderer.render(scene, cam); dirty = false;
+    if (DESKTOP) watchSpeed(performance.now() - t0);
+  }
 }
+
+/* 느린 PC 대비: 60번 그린 평균이 30ms를 넘으면 화질을 한 단계씩 낮춘다(해상도 → 그림자 → 안티앨리어싱 없는 해상도 1) */
+let slowSum = 0, slowN = 0, slowLevel = 0;
+function watchSpeed(ms) {
+  slowSum += ms; slowN++;
+  if (slowN < 60) return;
+  const avg = slowSum / slowN; slowSum = 0; slowN = 0;
+  if (avg <= 30 || slowLevel >= 2) return;
+  slowLevel++;
+  if (slowLevel === 1) { pixelCap = 1; layout(); }
+  else { renderer.shadowMap.enabled = false; sun.castShadow = false; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; }); dirty = true; }
+  host.log && host.log('slow ' + avg.toFixed(1) + 'ms → level ' + slowLevel);
+}
+stage.addEventListener('webglcontextlost', e => { e.preventDefault(); host.log && host.log('webgl context lost'); setTimeout(() => location.reload(), 500); });
 
 layout(); syncShapeUI();
 $$('#floors .sw')[0].setAttribute('aria-pressed', 'true');
